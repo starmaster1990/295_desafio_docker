@@ -1,4 +1,4 @@
-# RETO 3 - DOCKER
+# RETO 6 - DOCKER
 Este reto se compone de 3 partes
 - El ejercicio mongo
 - El ejercicio nginx
@@ -7,7 +7,7 @@ Este reto se compone de 3 partes
 Este reto se automatizo con las todas las partes por lo que al finalizar el script no tendra ningun contenedor<br>
 Nota: si desea dejar los contenedores activos comente la ultima seccion<br>
 La automatizacion usa el archivo del **script.sh** del reto y el **glogal.sh**
-En este ejerciocio **global.sh** contiene constantes y funciones para diferentes tareas.<br> 
+En este ejercio **global.sh** contiene constantes y funciones para diferentes tareas.<br> 
 Ej: subir la imagen a dockerhub, validar usuario de dockerhub, etc.
 ## AUTOMATIZACIÓN
 ### PARAMETROS
@@ -38,7 +38,7 @@ El script realiza lo siguiente:
 A la derecha tenemos las variables **baseUrlDockerHub** **endpointUsuarios** que forman el endpoint<br>
 de dockerHub que permite validar la existencia del usuario<br>
 A la izquierda tenemos los parametros de entrada del script junto con las variables usadas en el script<br>
-Nombre de imageners, contenedores, etc.<br>
+Nombre de imagenes, contenedores, etc.<br>
 
 ![](images/1_variables_y_global.png)
 
@@ -53,6 +53,7 @@ Las funciones en **global.sh** que se utilizan
 - existsUser
 - authDockerHub
 <br>
+
 ![](images/2_validacion_usuario.png)
 
 **EJERCICIO - MONGO** 
