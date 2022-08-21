@@ -3,11 +3,11 @@
 baseUrlDockerHub="https://hub.docker.com/"
 endpointUsuarios="v2/users/"
 
-lines(){
-    echo "=========================================="
-}
-
-read -p "Ingresa tu usuario de docker hub: " userDockerHub
+userDockerHub=$1
+passwordDockerHub=$2
+imageName=${3:-"bootcamp_nginx"}
+containerName=${4:-"bootcamp_container"}
+hostPort=${5:-"8080"}
 
 << 'Comment'
    Realiza una peticion a docker hub para validar existencia de usuario
@@ -30,90 +30,89 @@ portNotAvailable(){
     echo $(docker ps -q -f publish=$1)
 }
 
+<< 'Comment'
+   Crea el volumen del reto y se crea la imagen a partir del Dockerfile
+Comment
 imageCreator(){
-    lines
-    echo "================ Creando el volumen ================"bootcamp_container
-    lines
+    echo "creando volumen..."
     docker volume create static_content >reto3.log
-    lines
-    echo "================ Creando imagen ================"
-    lines
+    echo "creando imagen..."
     docker build --no-cache -t $1 . >reto3.log    
 }
 
+<< 'Comment'
+   Crea un contenedor
+Comment
 containerCreator(){
-    lines
-    echo "================ Creando contenedor ================"
-    lines
+    echo "creando contendor..."
     docker run -d --name $1 -v static_content:/usr/share/nginx/html -p $3:80 $2 >reto3.log
 }
 
+<< 'Comment'
+   ELiminaun contenedor
+Comment
 deleteContainer(){
     docker stop $1 2> reto3_error.log 1> reto3.log 
     docker rm $1 2> reto3_error.log 1> reto3.log
 }
 
+<< 'Comment'
+   Autentica en dockerhub
+Comment
 authDockerHub(){
     echo $(docker login -u $1 -p $2 2> reto3_error.log) 
 }
 
+<< 'Comment'
+   Sube la imagen en dockerhub
+Comment
 uploadDockerHub(){
+    echo "subiendo imagen $userDockerHub/$imageName ..."
     docker tag "$imageName" "$userDockerHub/$imageName" > reto3.log
     docker push "$userDockerHub/$imageName" > reto3.log
 }
 
- if [[ -z "$userDockerHub" ]]; then
-        echo "No ingreso un usuario de docker hub, el trabajo termino."
-    else        
-        exists=$(existsUser $userDockerHub)
-        if [[ "$exists" == "200" ]]; then
-            read -p "Ingresa un nombre para la imagen, esto es opcional(por defecto es *bootcamp_nginx*): " imageName
-            if [[ -z "$imageName" ]]; then
-                imageName="bootcamp_nginx"
-            fi
+if [[ -z "$userDockerHub" ]]; then
+    echo "No ingreso un usuario de dockerHub, el trabajo termino."
+    exit
+fi
 
-            read -p "Ingresa un nombre para el contenedor, esto es opcional(por defecto es *bootcamp_container*): " containerName            
-            if [[ -z "$containerName" ]]; then
-                containerName="bootcamp_container"
-            fi
+if [[ -z "$passwordDockerHub" ]]; then
+    echo "No ingreso su password de dockerHub, el trabajo termino."
+    exit
+fi
 
-            existsConta=$(existsContainer $containerName);
-            
-            if [[ -z "$existsConta" ]]; then
-                imageCreator "$imageName"
-                
-                read -p "Ingresa un puerto del host, esto es opcional(por defecto es *8080*): " hostPort
-                if [[ -z "$hostPort" ]]; then
-                    hostPort="8080"
-                fi
-                portNot=$(portNotAvailable $hostPort);
+#PROCESO
+echo "Validando usuario de dockerHub..."
+exists=$(existsUser $userDockerHub)
+if [[ "$exists" != "200" ]]; then
+    echo "El usuario $userDockerHub no existe en dockerhub, el trabajo termino."
+    exit
+fi
 
-                if [[ -z "$portNot" ]]; then
-                    containerCreator "$containerName" "$imageName" "$hostPort"
-                    echo "A continuacion necesitamos tu password de docker hub, para subir la imagen"
-                    read -p "Ingresa tu password de Dockerhub: " passwordDockerHub
-                    if [[ -z "$passwordDockerHub" ]]; then
-                        echo "No ingreso un password, el trabajo termino"
-                        deleteContainer "$containerName"
-                    else 
-                        auth=$(authDockerHub "$userDockerHub" "$passwordDockerHub")
-                        if [[ "$auth" == "Login Succeeded" ]]; then
-                            uploadDockerHub "$userDockerHub" "$containerName"
-                            echo "El contenedor se encuentra *UP* y la imagen fue subida a su cuenta de docker hub"
-                        else
-                            echo "Credencial incorrecta, el trabajo termino"                            
-                            deleteContainer "$containerName"
-                        fi
-                    fi
-                else
-                    echo "El puerto especificado *$hostPort* esta en uso por el contenedor con ID *$portNot*, el trabajo termino."
-                fi
+echo "Validando nombre de contenedor..."
+existsConta=$(existsContainer $containerName);            
+if [[ -n "$existsConta" ]]; then
+    echo "Ya existe un contenedor con el nombre *$containerName*, el trabajo termino."
+    exit
+fi
 
-            else
-                echo "Ya existe un contenedor con el nombre *$containerName*, el trabajo termino."
-            fi
-        else
-            echo "El usuario ingresado no existe, el trabajo termino."
-        fi
+echo "Validando disponibilidad puerto del host..."
+portNot=$(portNotAvailable $hostPort);
+if [[ -n "$portNot" ]]; then
+    echo "El puerto especificado *$hostPort* esta en uso por el contenedor con ID *$portNot*, el trabajo termino."
+    exit
+fi
 
-fi 
+echo "Autenticando en dockerhub..."
+auth=$(authDockerHub "$userDockerHub" "$passwordDockerHub")
+if [[ "$auth" != "Login Succeeded" ]]; then
+    echo "Credencial incorrecta, el trabajo termino"                            
+    deleteContainer "$containerName"
+    exit;
+fi
+
+imageCreator "$imageName"
+containerCreator "$containerName" "$imageName" "$hostPort"
+uploadDockerHub "$userDockerHub" "$containerName"
+echo "El contenedor se encuentra *UP* y la imagen fue subida a su cuenta de docker hub"
