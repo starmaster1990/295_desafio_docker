@@ -94,9 +94,9 @@ uploadDockerHub "$userDockerHub" "$imageNameNginx"
 echo "${info}INFO${reset}: El contenedor se encuentra ${bold}UP${reset} y la imagen fue subida a su cuenta de docker hub"
 
 echo "************************** EJERCICIO 3 - ELIMINAR CONTENEDORES **************************"
-# echo "${info}INFO${reset}: Eliminando..."
-# docker stop $(docker ps -q) && docker rm -f $(docker ps -a -q) &>/dev/null
-# echo "${info}INFO${reset}: todos los contenedores de sus sistema han sido eliminados"
+echo "${info}INFO${reset}: Eliminando..."
+docker stop $(docker ps -q) && docker rm -f $(docker ps -a -q) &>/dev/null
+echo "${info}INFO${reset}: todos los contenedores de sus sistema han sido eliminados"
 
 
 
